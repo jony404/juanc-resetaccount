@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
+	<api-platform-gw:api apiName="${api.name}" version="${api.version}" flowRef="api-main" create="true" apikitRef="api-config" doc:name="API Autodiscovery">
+        <api-platform-gw:description>${api.description}</api-platform-gw:description>
+        <api-platform-gw:tag>${api.name}</api-platform-gw:tag>
+    </api-platform-gw:api>
+	<http:listener-config name="api-httpListenerConfig"
+		host="0.0.0.0" port="${https.port}" doc:name="HTTP Listener Configuration"
+		protocol="HTTPS">
+		<tls:context>
+			<tls:key-store type="jks" path="keystore.jks"
+				keyPassword="${ssl.key}" password="${ssl.key}" />
+		</tls:context>
+	</http:listener-config>
+	<apikit:config name="api-config" raml="api.raml"
+		consoleEnabled="${console.enabled}" doc:name="Router" />
+	<flow name="api-main">
+		<http:listener config-ref="api-httpListenerConfig" path="/api/*"
+			doc:name="HTTP" />
+		<logger message="INBOUND HEADERS RESET ACCOUNT API =  #[headers:inbound:*]" level="INFO" doc:name="Logger"/>
+		<apikit:router config-ref="api-config" doc:name="APIkit Router" />
+		<exception-strategy ref="ChoiceExceptionStrategy"
+			doc:name="Reference Exception Strategy" />
+	</flow>
+	<flow name="api-console">
+		<http:listener config-ref="api-httpListenerConfig" path="/console/*"
+			doc:name="HTTP" />
+		<apikit:console config-ref="api-config" doc:name="APIkit Console" />
+		<exception-strategy ref="ChoiceExceptionStrategy"
+			doc:name="Reference Exception Strategy" />
+	</flow>
+	<flow name="post:/resetPasswordAccount/{userId}:api-config">
+		<set-variable variableName="userId" value="#[message.inboundProperties['http.uri.params'].userId]" doc:name="Variable"/>
+		
+		<choice doc:name="Choice for mocking">
+			<when expression="#[${mock.flag}=='false']">
+		<flow-ref name="proxy-resetPasswordAccount" doc:name="proxy-resetPasswordAccount" />
+		</when>
+			<otherwise>
+                <flow-ref name="mockResponses_SubFlow" doc:name="mockResponses_SubFlow"/>
+
+			</otherwise>
+		</choice>
+		
+		<exception-strategy ref="ChoiceExceptionStrategy"
+			doc:name="Reference Exception Strategy" />
+	</flow>
+    <flow name="get:/validateUserAccount/{userId}:api-config">
+    <set-variable variableName="userId" value="#[message.inboundProperties['http.uri.params'].userId]" doc:name="Variable"/>
+		<flow-ref name="proxy-validateUserAccount" doc:name="proxy-validateUserAccount" />
+		<exception-strategy ref="ChoiceExceptionStrategy"
+			doc:name="Reference Exception Strategy" />
+    </flow>
+	<sub-flow name="mockResponses_SubFlow">
+        <choice doc:name="Choice for different mock responses">
+            <when expression="#[flowVars.userId=='Z911967'&amp;&amp;message.inboundProperties['http.query.params'].task=='resetPass']">
+                <set-payload value="{   &quot;message&quot;: &quot;OK&quot;,   &quot;data&quot;: {     &quot;resetPassAccountResponse&quot;: {       &quot;passwordReset&quot;: {         &quot;success&quot;: true,         &quot;newPassword&quot;: &quot;asadfsdf&quot;       }     }   } }" mimeType="application/json" doc:name="Set Success pass reset"/>
+            </when>
+            <when expression="#[flowVars.userId=='Z911967'&amp;&amp;message.inboundProperties['http.query.params'].task=='unblockAccount']">
+                <set-payload value="{     &quot;message&quot;: &quot;OK&quot;,    &quot;data&quot;: {        &quot;resetPassAccountResponse&quot;: {           &quot;accountUnblock &quot;: {              &quot;success&quot;: true     }        }     }  } " mimeType="application/json" doc:name="Set success unlock account"/>
+            </when>
+            <when expression="#[flowVars.userId=='X720194']">
+                <expression-component doc:name="Expression"><![CDATA[throw new Exception("Backend Internal Error");]]></expression-component>
+            </when>
+            <when expression="#[flowVars.userId=='Y734810']">
+                <set-property propertyName="http.status" value="403" doc:name="Property"/>
+                <set-payload value="{     &quot;message&quot;: &quot;ERROR&quot;,     &quot;data&quot;: {        &quot;code&quot;:  &quot;403&quot;,   &quot;description&quot;: &quot;Max failed attempts per day&quot;  }  } " mimeType="application/json" doc:name="Set Payload Max attempts per day"/>
+            </when>
+            <when expression="#[flowVars.userId=='Y745510']">
+                <set-property propertyName="http.status" value="401" doc:name="Property"/>
+                <set-payload value="{     &quot;message&quot;: &quot;ERROR&quot;,    &quot;data&quot;: {        &quot;code&quot;:  &quot;401&quot;,   &quot;description&quot;: &quot;Authentication error&quot;  }  } " mimeType="application/json" doc:name="Set Payload Authentication error"/>
+            </when>
+            <otherwise>
+                <set-payload value="{   &quot;message&quot;: &quot;ERROR&quot;,   &quot;data&quot;: {     &quot;code&quot;: &quot;010&quot;,     &quot;description&quot;: &quot;Error not identified&quot;     }   } }" mimeType="application/json" doc:name="Set error"/>
+                <set-property propertyName="http.status" value="500" doc:name="Property"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+</mule>

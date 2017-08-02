@@ -1,0 +1,28 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	"type": "object",
+	"properties": {
+		"message": {
+			"type": "string"
+		},
+		"data": {
+			"type": "object",
+			"properties": {
+				"code": {
+					"type": "string"
+				},
+				"description": {
+					"type": "string"
+				}
+			},
+			"required": [
+				"code",
+				"description"
+			]
+		}
+	},
+	"required": [
+		"message",
+		"data"
+	]
+}

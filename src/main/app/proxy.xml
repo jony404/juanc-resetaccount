@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:https="http://www.mulesoft.org/schema/mule/https"
+	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:expression-language="http://www.mulesoft.org/schema/mule/expression-language-gw"
+	xmlns:api-platform-gw="http://www.mulesoft.org/schema/mule/api-platform-gw"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/expression-language-gw http://www.mulesoft.org/schema/mule/expression-language-gw/current/mule-expression-language-gw.xsd
+http://www.mulesoft.org/schema/mule/api-platform-gw http://www.mulesoft.org/schema/mule/api-platform-gw/current/mule-api-platform-gw.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd">
+    
+	<flow name="proxy-resetPasswordAccount">
+	<logger
+			message="Start proxy resetPasswordAccount: #[flowVars.userId]"
+			level="INFO" doc:name="Log Start" />
+        
+				<flow-ref name="copy-headers" doc:name="copy-headers" />
+
+				<choice doc:name="Choice Unblock or reset account">
+					<when
+						expression="#[message.inboundProperties['http.query.params'].task=='unblockAccount']">
+                        <logger message="Sending unlock account request" level="INFO" doc:name="Logger"/>
+                            <http:request config-ref="HTTP_Request_Configuration" path="${http.request.unlockAccount.path}" method="GET" doc:name="Send HTTP request unlock account">
+                                <http:request-builder>
+                        <http:uri-param paramName="name" value="#[flowVars.userId]"/>
+                        <http:uri-param paramName="ssn" value="#[message.inboundProperties['http.query.params'].ssn]"/>
+                        <http:uri-param paramName="domain" value="#[message.inboundProperties['http.query.params'].domain]"/>
+                        <http:header headerName="Content-Type" value="application/json"/>
+                                </http:request-builder>
+                                <http:success-status-code-validator values="${http.success.status.req}"/>
+                            </http:request>
+
+					</when>
+					<otherwise>
+                        <logger message="Sending reset password request" level="INFO" doc:name="Logger"/>
+                            <http:request config-ref="HTTP_Request_Configuration" path="${http.request.resetPass.path}" method="GET" doc:name="Send HTTP request reset password">
+                                <http:request-builder>
+                        <http:uri-param paramName="name" value="#[flowVars.userId]"/>
+                        <http:uri-param paramName="ssn" value="#[message.inboundProperties['http.query.params'].ssn]"/>
+                        <http:uri-param paramName="domain" value="#[message.inboundProperties['http.query.params'].domain]"/>
+                        <http:header headerName="Content-Type" value="application/json"/>
+                                </http:request-builder>
+                                <http:success-status-code-validator values="${http.success.status.req}"/>
+                            </http:request>
+
+					</otherwise>
+				</choice>
+				<object-to-string-transformer doc:name="Object to String"/>
+                <logger message="Response from remote api: #[message]" level="DEBUG" doc:name="Logger"/>
+
+				<flow-ref name="copy-headers" doc:name="copy-headers" />
+			
+		<logger
+			message="End proxy resetPasswordAccount: #[flowVars.userId]"
+			level="INFO" doc:name="Log End" />
+		<exception-strategy ref="ChoiceExceptionStrategy"
+			doc:name="Reference Exception Strategy" />
+
+	</flow>
+    <flow name="proxy-validateUserAccount">
+    <logger
+			message="Start proxy validateUserAccount: #[flowVars.userId]"
+			level="INFO" doc:name="Log Start" />
+				<flow-ref name="copy-headers" doc:name="copy-headers" />
+        <logger message="Sending validate account request" level="INFO" doc:name="Logger"/>
+        <http:request config-ref="HTTP_Request_Configuration" path="${http.request.validateUserAccount.path}" method="GET" doc:name="Send HTTP request unlock account">
+            <http:request-builder>
+                <http:uri-param paramName="name" value="#[flowVars.userId]"/>
+                <http:uri-param paramName="domain" value="#[message.inboundProperties['http.query.params'].domain]"/>
+                <http:header headerName="Content-Type" value="application/json"/>
+            </http:request-builder>
+            <http:success-status-code-validator values="${http.success.status.req}"/>
+        </http:request>
+
+				<object-to-string-transformer doc:name="Object to String"/>
+                <logger message="Response from remote api: #[message]" level="DEBUG" doc:name="Logger"/>
+
+				<flow-ref name="copy-headers" doc:name="copy-headers" />
+			
+		<logger
+			message="End proxy validateUserAccount: #[flowVars.userId]"
+			level="INFO" doc:name="Log End" />
+		<exception-strategy ref="ChoiceExceptionStrategy"
+			doc:name="Reference Exception Strategy" />
+    </flow>
+
+	<sub-flow name="copy-headers">
+		<copy-properties propertyName="*" doc:name="Copy All HTTP Headers" />
+		<remove-property propertyName="Content-Length"
+			doc:name="Remove Content Length" />
+		<remove-property propertyName="MULE_*" doc:name="Remove MULE Properties" />
+		<remove-property propertyName="X_MULE*"
+			doc:name="Remove X_MULE Properties" />
+	</sub-flow>
+</mule>

@@ -1,0 +1,11 @@
+{
+  "message": "OK",
+  "data": {
+    "validateUserAccountResponse": {
+      "passwordReset": {
+        "success": true,
+        "newPassword": "asadfsdf"
+      }
+    }
+  }
+}

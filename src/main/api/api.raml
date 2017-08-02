@@ -1,0 +1,36 @@
+#%RAML 0.8
+baseUri: https://localhost/api/
+title: Unblock account / Reset password
+version: 1.0
+
+securitySchemes:
+  - basic:
+      type: Basic Authentication
+resourceTypes:
+  - postReadOnlyMember: !include resourceTypes/post-readOnlyCollection-item.yaml
+  - postReadOnlyMember2: !include resourceTypes/post-readOnlyCollection-item2.yaml
+schemas:
+  - resetResponse: !include schemas/resetPasswordAccountSchemaResponse.json
+  - errorJSONResponse: !include schemas/error/errors.json
+  - validateResponse: !include schemas/validateUserAccountSchemaResponse.json
+traits:
+  - client-id-required: !include traits/clientSecret.yaml
+
+/resetPasswordAccount/{userId}:
+  type: {
+    postReadOnlyMember: {
+      collectionItem-res-schema: resetResponse,
+      collectionItem-res-example: !include examples/resetPassAccountExample.json,
+      errors-schema: errorJSONResponse,
+      errors-example: !include examples/error/errors.json
+    }
+  }
+/validateUserAccount/{userId}:
+  type: {
+    postReadOnlyMember2: {
+      collectionItem-res-schema: resetResponse,
+      collectionItem-res-example: !include examples/validateUserAccountExample.json,
+      errors-schema: errorJSONResponse,
+      errors-example: !include examples/error/errors.json
+    }
+  }

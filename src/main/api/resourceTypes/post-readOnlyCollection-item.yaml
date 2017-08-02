@@ -1,0 +1,75 @@
+  uriParameters: 
+    userId:
+      required: true
+      example: 0000000
+  post:
+    is: [client-id-required]
+    description: |
+      This API will serve as a proxy to call the backend API to reset the password or unblock an account
+    queryParameters: 
+      ssn:
+        required: true
+        type: number
+        description: |
+          Last 4 digits of social security number
+      task:
+        required: true
+        type: string
+        description: |
+          Task to achieve on the account: reset password or unblock account
+        enum: ["resetPass","unblockAccount"]
+      domain:
+        required: false
+        type: string
+        example: ABC
+    responses: 
+      200:
+        body:
+          application/json:
+            schema: <<collectionItem-res-schema>>
+            example: <<collectionItem-res-example>>
+      400:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      401:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      403:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      404:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      422:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      500:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      501:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      503:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>
+      504:
+        body:
+          application/json:
+            schema: <<errors-schema>>
+            example: <<errors-example>>

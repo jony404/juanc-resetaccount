@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mock="http://www.mulesoft.org/schema/mule/mock"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:munit="http://www.mulesoft.org/schema/mule/munit" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:core="http://www.mulesoft.org/schema/mule/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/mock http://www.mulesoft.org/schema/mule/mock/current/mule-mock.xsd
+http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd">
+    <munit:config name="munit" doc:name="MUnit configuration" mock-connectors="false" mock-inbounds="false"/>
+    <spring:beans>
+    	<spring:import resource="classpath:api.xml"/>
+        <spring:import resource="classpath:proxy.xml"/>
+        <spring:import resource="classpath:common-conf.xml"/>
+        <spring:import resource="classpath:common-error.xml"/>
+        <spring:import resource="classpath:email.xml"/>
+    </spring:beans>
+    <munit:test name="proxy-test-suite-proxyTest-resetAccount-200status" description="Test">
+    		<mock:when doc:name="Mock rest call" messageProcessor=".*:.*">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['Send http unblock account']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[getResource('mockResponses/resetAccount-200.json').asString()]" mimeType="application/json">
+                <mock:inbound-properties>
+                    <mock:inbound-property key="http.status" value="200"/>
+                </mock:inbound-properties>
+            </mock:then-return>
+        </mock:when>
+        <munit:set payload="#[{}]" doc:name="Set Message" encoding="UTF-8" mimeType="application/json">
+            <munit:inbound-properties>
+                <munit:inbound-property key="Authorization" value="#['Basic SnVhbjpKdWFu']"/>
+                <munit:inbound-property key="http.uri.params" value="#[['userId':'z225184']]"/>
+                <munit:inbound-property key="http.query.params" value="#[['ssn':'9999','task':'unblockAccount']]"/>
+            </munit:inbound-properties>
+        </munit:set>
+        <flow-ref name="post:/resetPasswordAccount/{userId}:api-config" doc:name="post:/resetPasswordAccount/{userId}:api-config"/>
+        <munit:assert-not-null message="Failed, null payload" doc:name="Assert Not Null Payload"/>
+        <munit:assert-true message="Fail, not 200 status received" condition="#[message.outboundProperties['http.status']==200]" doc:name="Assert True HTTP status 200"/>
+		<object-to-string-transformer doc:name="Object to String"/>
+        <munit:assert-on-equals message="Response is not valid" expectedValue="#['true']" actualValue="#[json:data/resetPassAccountResponse/accountUnblock/success]" doc:name="Assert that response is valid"/>        
+    </munit:test>
+    <munit:test name="proxy-test-suite-proxyTest-resetPassword-200status" description="Test">
+    		<mock:when doc:name="Mock rest call" messageProcessor=".*:.*">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['Send HTTP request reset password']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[getResource('mockResponses/resetPass-200.json').asString()]" mimeType="application/json">
+                <mock:inbound-properties>
+                    <mock:inbound-property key="http.status" value="200"/>
+                </mock:inbound-properties>
+            </mock:then-return>
+        </mock:when>
+        <munit:set payload="#[{}]" doc:name="Set Message" encoding="UTF-8" mimeType="application/json">
+            <munit:inbound-properties>
+                <munit:inbound-property key="Authorization" value="#['Basic SnVhbjpKdWFu']"/>
+                <munit:inbound-property key="http.uri.params" value="#[['userId':'z225184']]"/>
+                <munit:inbound-property key="http.query.params" value="#[['ssn':'9999','task':'resetPass']]"/>
+            </munit:inbound-properties>
+        </munit:set>
+        <flow-ref name="post:/resetPasswordAccount/{userId}:api-config" doc:name="post:/resetPasswordAccount/{userId}:api-config"/>
+        <munit:assert-not-null message="Failed, null payload" doc:name="Assert Not Null Payload"/>
+        <munit:assert-true message="Fail, not 200 status received" condition="#[message.outboundProperties['http.status']==200]" doc:name="Assert True HTTP status 200"/>
+		<object-to-string-transformer doc:name="Object to String"/>
+        <munit:assert-on-equals message="Response is not valid" expectedValue="#['true']" actualValue="#[json:data/resetPassAccountResponse/passwordReset/success]" doc:name="Assert that response is valid"/>        
+    </munit:test>
+    <munit:test name="proxy-test-suite-proxyTest-resetAccount-400status" description="Test">
+ 		<mock:throw-an
+			exception-ref="#[new org.mule.module.apikit.exception.NotFoundException(&quot;Test exception&quot;)]"
+			whenCalling=".*:.*" doc:name="Throw an Exception">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['Set body request']"/>
+            </mock:with-attributes>
+
+		</mock:throw-an>
+        <munit:set payload="#[{}]" doc:name="Set Message" encoding="UTF-8" mimeType="application/json">
+            <munit:inbound-properties>
+                <munit:inbound-property key="Authorization" value="#['Basic SnVhbjpKdWFu']"/>
+                <munit:inbound-property key="http.uri.params" value="#[['userId':'z225184']]"/>
+                <munit:inbound-property key="http.query.params" value="#[['ssn':'9999','task':'unblockAccount']]"/>
+            </munit:inbound-properties>
+        </munit:set>
+        <flow-ref name="post:/resetPasswordAccount/{userId}:api-config" doc:name="post:/resetPasswordAccount/{userId}:api-config"/>
+        <munit:assert-not-null message="Failed, null payload" doc:name="Assert Not Null Payload"/>
+        <munit:assert-true message="Fail, not 404 status received" condition="#[message.outboundProperties['http.status']==404]" doc:name="Assert True HTTP status 404"/>
+		<object-to-string-transformer doc:name="Object to String"/>
+        <munit:assert-on-equals message="Response is not valid" expectedValue="#['http.resourcenotfound']" actualValue="#[json:data/description]" doc:name="Assert that response is valid"/>        
+    </munit:test>
+    <munit:test name="proxy-test-suite-proxyTest-resetAccount-500status" description="Test">
+ 		<mock:throw-an
+			exception-ref="#[new java.lang.Exception(&quot;Test exception&quot;)]"
+			whenCalling=".*:.*" doc:name="Throw an Exception">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['Set body request']"/>
+            </mock:with-attributes>
+		</mock:throw-an>
+   		<mock:when doc:name="Mock STMP" messageProcessor=".*:.*">
+            <mock:with-attributes>
+                <mock:with-attribute name="doc:name" whereValue="#['SMTP']"/>
+            </mock:with-attributes>
+            <mock:then-return payload="#[samePayload()]"/>
+        </mock:when>
+        <munit:set payload="#[{}]" doc:name="Set Message" encoding="UTF-8" mimeType="application/json">
+            <munit:inbound-properties>
+                <munit:inbound-property key="Authorization" value="#['Basic SnVhbjpKdWFu']"/>
+                <munit:inbound-property key="http.uri.params" value="#[['userId':'z225184']]"/>
+                <munit:inbound-property key="http.query.params" value="#[['ssn':'9999','task':'unblockAccount']]"/>
+            </munit:inbound-properties>
+        </munit:set>
+        <flow-ref name="post:/resetPasswordAccount/{userId}:api-config" doc:name="post:/resetPasswordAccount/{userId}:api-config"/>
+        <munit:assert-not-null message="Failed, null payload" doc:name="Assert Not Null Payload"/>
+        <munit:assert-true message="Fail, not 504 status received" condition="#[message.outboundProperties['http.status']==504]" doc:name="Assert True HTTP status 504"/>
+		<object-to-string-transformer doc:name="Object to String"/>
+        <munit:assert-on-equals message="Response is not valid" expectedValue="#['Unknown error']" actualValue="#[json:data/description]" doc:name="Assert that response is valid"/>        
+    </munit:test>
+</mule>

@@ -1,0 +1,7 @@
+{   
+	"message": "ERROR",
+	"data": {     
+		"code":  "500",
+		"description": "Backend Internal Error"
+	} 
+}
